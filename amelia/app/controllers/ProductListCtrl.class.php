@@ -10,20 +10,36 @@ use core\Utils;
 class ProductListCtrl {
     
 
-
 public function __construct() {
-    $this->products = $this->getProducts();
+    
 }
 
 
 
 
-    public function getProducts() {
-        $db = App::getDB();
-        return $db->select('products', '*', [
-            'isAvailable' => 1
-        ]);
+public function getProducts($limit = 2, $offset = 0, $minPrice = null, $name = null) {
+    $db = App::getDB();
+
+    $where = ["isAvailable" => 1];
+
+    if (!empty($minPrice)) {
+        $where["price[>=]"] = $minPrice;
     }
+
+    if (!empty($name)) {
+        $where["productName"] = $name;
+    }
+
+
+    $where["stock[>]"] = 0;
+
+    $where["LIMIT"] = [$offset, $limit];
+
+    return $db->select("products", "*", $where);
+}
+
+
+
 
     public function action_productDelete() {
 
@@ -68,6 +84,32 @@ public function __construct() {
                 $smarty->assign("idRole", $roleidDB);
 
         }
+        
+
+$page = isset($_POST['page']) ? max(1, (int)$_POST['page']) : 1;
+
+
+
+$limit = 2;
+$offset = ($page - 1) * $limit;
+
+$this->products = $this->getProducts($limit, $offset, $minproductPrice, $nameFilter);
+
+$countWhere = ['isAvailable' => 1, 'stock[>]' => 0];
+if (!empty($minproductPrice)) $countWhere["price[>=]"] = $minproductPrice;
+if (!empty($nameFilter)) $countWhere["productName"] = $nameFilter;
+
+$allAvailableProducts = App::getDB()->count("products", $countWhere);
+
+$hasNextPage = ($offset + $limit) < $allAvailableProducts;
+
+$smarty->assign('page', $page);
+$smarty->assign('hasNextPage', $hasNextPage);
+
+$totalPages = (int)ceil($allAvailableProducts / $limit);
+$smarty->assign('totalPages', $totalPages);
+
+        
                 $smarty->assign('products', $this->products);
                 $smarty->assign('priceP', $minproductPrice);
                 
@@ -79,44 +121,47 @@ public function __construct() {
     }
   
 
+public function action_myProductList() {
+    $smarty = App::getSmarty();
+    $app_url = App::getConf()->app_url; 
+    $smarty->assign('app_url', $app_url); 
 
-    public function action_myProductList() {
-        $smarty = App::getSmarty();
-
-      
-        $app_url = App::getConf()->app_url; 
-        $smarty->assign('app_url', $app_url); 
-        
-        
-        
+    if (!isset($_SESSION['user_id'])) {
+        echo "Użytkownik nie jest zalogowany.";
+        return;
+    }
 
 
-               if (isset($_SESSION['user_id'])) {
-            $userDB = $_SESSION['username'];
-            $idDB = $_SESSION['user_id'];
-            $roleidDB = $_SESSION['idRole'];
-                $smarty->assign("us", $userDB);
-                $smarty->assign("id", $idDB);
-                $smarty->assign("idRole", $roleidDB);
+    $userDB = $_SESSION['username'];
+    $idDB = $_SESSION['user_id'];
+    $roleidDB = $_SESSION['idRole'];
 
-    
-        } else {
-    echo "Użytkownik nie jest zalogowany.";
+    $smarty->assign("us", $userDB);
+    $smarty->assign("id", $idDB);
+    $smarty->assign("idRole", $roleidDB);
+
+    $page = isset($_POST['page']) ? max(1, (int)$_POST['page']) : 1;
+    $limit = 3;
+    $offset = ($page - 1) * $limit;
+
+    $products = $this->getProducts($limit, $offset, $idDB);
+
+    $totalUserProducts = App::getDB()->count("products", [
+        "isAvailable" => 1,
+        "idCreator" => $idDB
+    ]);
+
+    $hasNextPage = ($offset + $limit) < $totalUserProducts;
+    $totalPages = (int)ceil($totalUserProducts / $limit);
+
+    $smarty->assign('products', $products);
+    $smarty->assign('page', $page);
+    $smarty->assign('hasNextPage', $hasNextPage);
+    $smarty->assign('totalPages', $totalPages);
+
+    $smarty->display('productList.tpl');
 }
 
-
-        // Handle delete request
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['idProduct'])) {
-            $idProduct = $_GET['idProduct'];
-            $this->deleteProduct($idProduct);
-            header('Location: ' . $app_url . '/productList');
-            exit();
-        }
-
-        $smarty->assign('products', $this->products);
-        $smarty->display('productList.tpl');
-        
-    }
     
 public function action_addProduct() {
   

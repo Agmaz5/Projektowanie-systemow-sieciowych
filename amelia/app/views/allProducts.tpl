@@ -7,24 +7,25 @@
 
 <br>
 
-<!-- Set Max Price Form -->
 <div style="display: flex; justify-content: center; align-items: center; gap: 0px; margin-bottom: 20px;">
-    <!-- Set Max Price Form -->
+
     <div style="display: inline-block;">
         <form action="{$conf->action_url}displayAll" method="post" style="display: inline;">
             <input type="submit" name="" value="Filter" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;" />
             <input type="text" name="price" value="{$priceP}" placeholder="Enter min price" style="padding: 5px; margin-right: 5px;"/>
             <input type="text" name="name" value="{$nameF}" placeholder="Enter name" style="padding: 5px; margin-right: 5px;"/>      
+            <input type="hidden" name="page" value="1" />
+
         </form>
     </div>
     
             
-    <!-- Reset Filter Form -->
     <div style="display: inline-block;">
         <form action="{$conf->action_url}displayAll" method="post" style="display: inline;">
             <input type="hidden" name="price" value="" />
             <input type="hidden" name="name" value="" />
             <input type="submit" name="" value="Reset Filters"  style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;" />
+            <input type="hidden" name="page" value="1" />
         </form>
     </div>
 </div>
@@ -32,7 +33,6 @@
 
 <br><br>
 
-<!-- Products Display -->
 <div style="
     display: flex; 
     flex-wrap: wrap; 
@@ -44,8 +44,7 @@
 ">
     
     {foreach $products as $product}
-        {if $product.stock > 0}
-            {if ((isset($priceP)  && $priceP <= $product.price) || $priceP == null) && ((isset($nameF) && $nameF == $product.productName) || $nameF == null) }    
+
                 <div class="product" style="
                     border: 1px solid #ddd; 
                     border-radius: 8px; 
@@ -81,16 +80,59 @@
                         </form>
                     </div>
                 </div>
-            {/if}
-        {/if}
     {/foreach}
+
+    
+
+    
 </div>
 
+<br><br>
+<br><br>
+<div style="text-align: center;">
+    
+        <form action="{$conf->action_url}displayAll" method="post" style="display: inline;">
+            <input type="hidden" name="page" value="1" />
+            <input type="hidden" name="price" value="{$priceP}" />
+            <input type="hidden" name="name" value="{$nameF}" />
+            <input type="submit" value="<<" style="padding: 8px 12px; margin-right: 10px;" />
+        </form>    
+    
+    
+    {if $page > 1}
+        <form action="{$conf->action_url}displayAll" method="post" style="display: inline;">
+            <input type="hidden" name="page" value="{$page - 1}" />
+            <input type="hidden" name="price" value="{$priceP}" />
+            <input type="hidden" name="name" value="{$nameF}" />
+            <input type="submit" value="< Previous" style="padding: 8px 12px; margin-right: 10px;" />
+        </form>
+    {/if}
 
+    <span style="font-weight: bold;">Page {$page}</span>
+
+    {if $hasNextPage}
+        <form action="{$conf->action_url}displayAll" method="post" style="display: inline;">
+            <input type="hidden" name="page" value="{$page + 1}" />
+            <input type="hidden" name="price" value="{$priceP}" />
+            <input type="hidden" name="name" value="{$nameF}" />
+            <input type="submit" value="Next >" style="padding: 8px 12px; margin-left: 10px;" />
+        </form>
+    {/if}
+    
+    
+        <form action="{$conf->action_url}displayAll" method="post" style="display: inline;">
+            <input type="hidden" name="page" value="{$totalPages}" />
+            <input type="hidden" name="price" value="{$priceP}" />
+            <input type="hidden" name="name" value="{$nameF}" />
+            <input type="submit" value=">>" style="padding: 8px 12px; margin-left: 10px;" />
+        </form>
+    
+    
+</div>
 <br><br>
 
 
-
+<br><br>    
 
 
 {/block}
