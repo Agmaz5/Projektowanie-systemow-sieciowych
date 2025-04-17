@@ -3,6 +3,10 @@
 {block name="content"}
 
 
+    
+    
+    
+    
 <div style="text-align: center;">
     <form action="{$conf->action_url}newShow" method="post" style="margin: 0; display: inline-block;">
         <input type="submit" name="edition" value="Add New Product" class="button-choose pure-button" />

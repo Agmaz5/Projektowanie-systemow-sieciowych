@@ -8,6 +8,7 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/grids-responsive-min.css">
         <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
         <link rel="stylesheet" href="http://localhost/amelia/css/style.css">
+        <script type="text/javascript" src="http://localhost/amelia/public/js/functions.js"></script>
     </head>
 
     <body>
@@ -129,5 +130,8 @@
             </div>
         </div>
 
+            <script src="{$conf->app_url}/js/functions.js"></script>
+            
+            
     </body>
 </html>

@@ -28,5 +28,7 @@ Utils::addRoute('userDelete', 'AdminCtrl', ['admin']);
 Utils::addRoute('addUser', 'AdminCtrl', ['admin']);
 Utils::addRoute('addNewUser', 'AdminCtrl', ['admin']);
 Utils::addRoute('productDelete', 'ProductListCtrl', ['creator']);
+Utils::addRoute('productListPart', 'ProductListCtrl');
+
 
 

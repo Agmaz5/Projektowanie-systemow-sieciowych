@@ -5,13 +5,16 @@ namespace app\controllers;
 use core\App;
 use core\Message;
 use core\Utils;
-
+use app\forms\PersonSearchForm;
 
 class ProductListCtrl {
     
 
 public function __construct() {
-    
+    $this->form = new PersonSearchForm();
+    $this->form->price = 0;
+    $this->form->page = 1;
+    $this->form->name = "";
 }
 
 
@@ -50,75 +53,49 @@ public function getProducts($limit = 2, $offset = 0, $minPrice = null, $name = n
 
     }
     
-    public function action_displayAll(){
-        
-        
-        
-                
-        if (isset($_POST['price'])){
-            $minproductPrice = $_POST['price'];
-        }
-        else{
-            $minproductPrice = null;
-        }
-        
-        
-        if (isset($_POST['name'])){
-            $nameFilter = $_POST['name'];
-        }
-        else {
-             $nameFilter = null;            
-        }
-               
+public function action_displayAll() {
+    $smarty = App::getSmarty();
 
-        $smarty = App::getSmarty();
-        
+    
+    $minproductPrice = $_POST['price'] ?? null;
+    $nameFilter = $_POST['name'] ?? null;
+    $page = max(1, (int)($_POST['page'] ?? 1));
 
-            if (isset($_SESSION['user_id'])) {
-            $userDB = $_SESSION['username'];
-            $idDB = $_SESSION['user_id'];
-            $roleidDB = $_SESSION['idRole'];
+    $limit = 2;
+    $offset = ($page - 1) * $limit;
 
-                $smarty->assign("us", $userDB);
-                $smarty->assign("id", $idDB);
-                $smarty->assign("idRole", $roleidDB);
-
-        }
-        
-
-$page = isset($_POST['page']) ? max(1, (int)$_POST['page']) : 1;
-
-
-
-$limit = 2;
-$offset = ($page - 1) * $limit;
-
-$this->products = $this->getProducts($limit, $offset, $minproductPrice, $nameFilter);
-
-$countWhere = ['isAvailable' => 1, 'stock[>]' => 0];
-if (!empty($minproductPrice)) $countWhere["price[>=]"] = $minproductPrice;
-if (!empty($nameFilter)) $countWhere["productName"] = $nameFilter;
-
-$allAvailableProducts = App::getDB()->count("products", $countWhere);
-
-$hasNextPage = ($offset + $limit) < $allAvailableProducts;
-
-$smarty->assign('page', $page);
-$smarty->assign('hasNextPage', $hasNextPage);
-
-$totalPages = (int)ceil($allAvailableProducts / $limit);
-$smarty->assign('totalPages', $totalPages);
-
-        
-                $smarty->assign('products', $this->products);
-                $smarty->assign('priceP', $minproductPrice);
-                
-                
-                $smarty->assign('nameF', $nameFilter);
-                
-                
-                $smarty->display('allProducts.tpl');
+    
+    if (isset($_SESSION['user_id'])) {
+        $smarty->assign("us", $_SESSION['username']);
+        $smarty->assign("id", $_SESSION['user_id']);
+        $smarty->assign("idRole", $_SESSION['idRole']);
     }
+
+    
+    $products = $this->getProducts($limit, $offset, $minproductPrice, $nameFilter);
+
+    $countWhere = ['isAvailable' => 1, 'stock[>]' => 0];
+    if (!empty($minproductPrice)) $countWhere["price[>=]"] = $minproductPrice;
+    if (!empty($nameFilter)) $countWhere["productName"] = $nameFilter;
+
+    $allAvailableProducts = App::getDB()->count("products", $countWhere);
+    $hasNextPage = ($offset + $limit) < $allAvailableProducts;
+    $totalPages = (int)ceil($allAvailableProducts / $limit);
+
+    
+    $smarty->assign('products', $products);
+    $smarty->assign('priceP', $minproductPrice);
+    $smarty->assign('nameF', $nameFilter);
+    $smarty->assign('page', $page);
+    $smarty->assign('hasNextPage', $hasNextPage);
+    $smarty->assign('totalPages', $totalPages);
+
+    $smarty->display('allProducts.tpl');
+}
+
+        
+        
+      
   
 
 public function action_myProductList() {
@@ -230,4 +207,70 @@ public function action_addProduct() {
         $smarty->display("newProduct.tpl");
     }
     
+
+public function action_productListPart() {
+    $smarty = App::getSmarty();
+
+    
+    $this->form->price = $this->getFromRequest('price');
+    $this->form->page = $this->getFromRequest('page');
+    $this->form->name = $this->getFromRequest('name');
+
+    $minproductPrice = !empty($this->form->price) ? $this->form->price : null;
+    $page = max(1, (int)$this->form->page);
+    $nameFilter = !empty($this->form->name) ? $this->form->name : null;
+
+    
+    
+    $limit = 2;
+    $offset = ($page - 1) * $limit;
+
+    
+    if (isset($_SESSION['user_id'])) {
+        $smarty->assign("us", $_SESSION['username']);
+        $smarty->assign("id", $_SESSION['user_id']);
+        $smarty->assign("idRole", $_SESSION['idRole']);
+    }
+
+
+    $products = $this->getProducts($limit, $offset, $minproductPrice, $nameFilter);
+
+    $countWhere = ['isAvailable' => 1, 'stock[>]' => 0];
+    if (!empty($minproductPrice)) $countWhere["price[>=]"] = $minproductPrice;
+    if (!empty($nameFilter)) $countWhere["productName"] = $nameFilter;
+
+    $allAvailableProducts = App::getDB()->count("products", $countWhere);
+    $hasNextPage = ($offset + $limit) < $allAvailableProducts;
+    $totalPages = (int)ceil($allAvailableProducts / $limit);
+
+
+    $smarty->assign('products', $products);
+    $smarty->assign('priceP', $minproductPrice);
+    $smarty->assign('nameF', $nameFilter);
+    $smarty->assign('page', $page);
+    $smarty->assign('hasNextPage', $hasNextPage);
+    $smarty->assign('totalPages', $totalPages);
+    $smarty->assign('searchForm', $this->form); // Jeśli potrzebne w AJAX
+
+    $smarty->display('ProductListTable.tpl');
 }
+
+
+
+
+
+    
+    public static function getFromRequest($param_name, $required = false, $required_message = null, $index = null) {
+        return self::getFrom($_REQUEST, $param_name, $required, $required_message, $index);
+    }
+    
+        private static function getFrom(&$source, &$idx, &$required, &$required_message, &$index) {
+        if ($required && !isset($source[$idx]))
+            App::getMessages()->addMessage(new Message($required_message, Message::ERROR), $index);
+        if (isset($source[$idx]))
+            return $source[$idx];
+        return null;
+    }
+}
+
+
